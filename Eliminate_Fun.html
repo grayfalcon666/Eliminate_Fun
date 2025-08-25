@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>自定义消消乐游戏</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Arial Rounded MT Bold', 'Arial', sans-serif;
+            background: linear-gradient(135deg, #6e8efb, #a777e3);
+            color: #333;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            color: #6a11cb;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .score-board {
+            display: flex;
+            justify-content: space-between;
+            background: linear-gradient(to right, #6a11cb, #2575fc);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+        }
+        
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 5px;
+            margin: 0 auto;
+            max-width: 500px;
+        }
+        
+        .tile {
+            aspect-ratio: 1/1;
+            border-radius: 8px;
+            cursor: pointer;
+            background-size: cover;
+            background-position: center;
+            transition: all 0.2s ease;
+            box-shadow: 0 3px 5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .tile.selected {
+            transform: scale(0.9);
+            box-shadow: 0 0 0 3px #ffcc00, 0 0 15px #ffcc00;
+        }
+        
+        .tile.matched {
+            animation: pop 0.5s forwards;
+        }
+        
+        @keyframes pop {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.7; }
+            100% { transform: scale(0); opacity: 0; }
+        }
+        
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        .custom-images {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .image-option {
+            aspect-ratio: 1/1;
+            border-radius: 8px;
+            cursor: pointer;
+            background-size: cover;
+            background-position: center;
+            border: 2px solid transparent;
+            transition: all 0.2s ease;
+        }
+        
+        .image-option.selected {
+            border-color: #6a11cb;
+            box-shadow: 0 0 10px rgba(106, 17, 203, 0.5);
+        }
+        
+        button {
+            background: linear-gradient(to right, #6a11cb, #2575fc);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .instructions {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            line-height: 1.6;
+        }
+        
+        .instructions h3 {
+            color: #6a11cb;
+            margin-bottom: 10px;
+        }
+        
+        footer {
+            margin-top: 30px;
+            text-align: center;
+            color: white;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 600px) {
+            .game-board {
+                grid-template-columns: repeat(8, 1fr);
+                max-width: 100%;
+            }
+            
+            .tile {
+                border-radius: 5px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🌟 自定义消消乐 🌟</h1>
+        <p>交换相邻方块，匹配三个或更多相同方块进行消除！</p>
+    </header>
+    
+    <div class="container">
+        <div class="score-board">
+            <div>分数: <span id="score">0</span></div>
+            <div>移动次数: <span id="moves">0</span></div>
+        </div>
+        
+        <div class="game-board" id="gameBoard"></div>
+        
+        <div class="controls">
+            <h3>自定义方块图片:</h3>
+            <div class="custom-images">
+                <div class="image-option selected" style="background-image: url('https://images.unsplash.com/photo-1550258987-190a2d41a8ba?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=100&q=80');" data-type="0"></div>
+                <div class="image-option" style="background-image: url('https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=100&q=80');" data-type="1"></div>
+                <div class="image-option" style="background-image: url('https://images.unsplash.com/photo-1563271155-e5e4f327f5c7?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=100&q=80');" data-type="2"></div>
+                <div class="image-option" style="background-image: url('https://images.unsplash.com/photo-1596502159686-ec2a6c616f3b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=100&q=80');" data-type="3"></div>
+            </div>
+            
+            <button id="restartBtn">重新开始游戏</button>
+            <button id="applyImagesBtn">应用选中图片</button>
+        </div>
+        
+        <div class="instructions">
+            <h3>游戏说明:</h3>
+            <p>1. 点击一个方块选中它，然后点击相邻方块进行交换</p>
+            <p>2. 只有形成三个或更多相同方块的直线（横向或纵向）才能消除</p>
+            <p>3. 消除后，上方方块会下落填充空位，顶部会生成新方块</p>
+            <p>4. 您可以从上方选择自己喜欢的图片来自定义方块外观</p>
+        </div>
+    </div>
+    
+    <footer>
+        <p>© 2023 自定义消消乐游戏 | 使用HTML、CSS和JavaScript实现</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // 游戏配置
+            const config = {
+                boardSize: 8,
+                tileTypes: 4,
+                images: [
+                    'https://images.unsplash.com/photo-1550258987-190a2d41a8ba?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=100&q=80',
+                    'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=100&q=80',
+                    'https://images.unsplash.com/photo-1563271155-e5e4f327f5c7?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=100&q=80',
+                    'https://images.unsplash.com/photo-1596502159686-ec2a6c616f3b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=100&q=80'
+                ]
+            };
+            
+            // 游戏状态
+            let score = 0;
+            let moves = 0;
+            let selectedTile = null;
+            let board = [];
+            
+            // DOM 元素
+            const gameBoard = document.getElementById('gameBoard');
+            const scoreElement = document.getElementById('score');
+            const movesElement = document.getElementById('moves');
+            const restartBtn = document.getElementById('restartBtn');
+            const applyImagesBtn = document.getElementById('applyImagesBtn');
+            const imageOptions = document.querySelectorAll('.image-option');
+            
+            // 初始化游戏
+            function initGame() {
+                score = 0;
+                moves = 0;
+                selectedTile = null;
+                scoreElement.textContent = score;
+                movesElement.textContent = moves;
+                
+                // 创建游戏板
+                createBoard();
+                
+                // 初始渲染
+                renderBoard();
+            }
+            
+            // 创建游戏板
+            function createBoard() {
+                board = [];
+                for (let row = 0; row < config.boardSize; row++) {
+                    board[row] = [];
+                    for (let col = 0; col < config.boardSize; col++) {
+                        // 随机生成方块类型
+                        board[row][col] = Math.floor(Math.random() * config.tileTypes);
+                    }
+                }
+                
+                // 确保初始状态没有匹配项
+                while (findMatches().length > 0) {
+                    for (let match of findMatches()) {
+                        board[match.row][match.col] = Math.floor(Math.random() * config.tileTypes);
+                    }
+                }
+            }
+            
+            // 渲染游戏板
+            function renderBoard() {
+                gameBoard.innerHTML = '';
+                for (let row = 0; row < config.boardSize; row++) {
+                    for (let col = 0; col < config.boardSize; col++) {
+                        const tile = document.createElement('div');
+                        tile.className = 'tile';
+                        tile.style.backgroundImage = `url(${config.images[board[row][col]]})`;
+                        tile.dataset.row = row;
+                        tile.dataset.col = col;
+                        
+                        tile.addEventListener('click', () => handleTileClick(row, col));
+                        
+                        gameBoard.appendChild(tile);
+                    }
+                }
+            }
+            
+            // 处理方块点击
+            function handleTileClick(row, col) {
+                // 如果没有选中的方块，选中当前方块
+                if (!selectedTile) {
+                    selectedTile = { row, col };
+                    highlightTile(row, col, true);
+                    return;
+                }
+                
+                // 如果点击已选中的方块，取消选中
+                if (selectedTile.row === row && selectedTile.col === col) {
+                    highlightTile(row, col, false);
+                    selectedTile = null;
+                    return;
+                }
+                
+                // 检查是否相邻
+                if (isAdjacent(selectedTile.row, selectedTile.col, row, col)) {
+                    // 交换方块
+                    swapTiles(selectedTile.row, selectedTile.col, row, col);
+                    
+                    // 增加移动次数
+                    moves++;
+                    movesElement.textContent = moves;
+                    
+                    // 取消选中
+                    highlightTile(selectedTile.row, selectedTile.col, false);
+                    selectedTile = null;
+                } else {
+                    // 如果不相邻，重新选择
+                    highlightTile(selectedTile.row, selectedTile.col, false);
+                    selectedTile = { row, col };
+                    highlightTile(row, col, true);
+                }
+            }
+            
+            // 高亮方块
+            function highlightTile(row, col, isSelected) {
+                const tile = document.querySelector(`.tile[data-row="${row}"][data-col="${col}"]`);
+                if (isSelected) {
+                    tile.classList.add('selected');
+                } else {
+                    tile.classList.remove('selected');
+                }
+            }
+            
+            // 检查两个方块是否相邻
+            function isAdjacent(row1, col1, row2, col2) {
+                return (
+                    (Math.abs(row1 - row2) === 1 && col1 === col2) ||
+                    (Math.abs(col1 - col2) === 1 && row1 === row2)
+                );
+            }
+            
+            // 交换方块
+            function swapTiles(row1, col1, row2, col2) {
+                // 交换数据
+                const temp = board[row1][col1];
+                board[row1][col1] = board[row2][col2];
+                board[row2][col2] = temp;
+                
+                // 重新渲染
+                renderBoard();
+                
+                // 检查匹配
+                const matches = findMatches();
+                if (matches.length > 0) {
+                    // 有匹配，处理消除
+                    processMatches(matches);
+                } else {
+                    // 没有匹配，交换回来
+                    const temp = board[row1][col1];
+                    board[row1][col1] = board[row2][col2];
+                    board[row2][col2] = temp;
+                    renderBoard();
+                }
+            }
+            
+            // 查找所有匹配
+            function findMatches() {
+                const matches = [];
+                
+                // 检查水平匹配
+                for (let row = 0; row < config.boardSize; row++) {
+                    for (let col = 0; col < config.boardSize - 2; col++) {
+                        const type = board[row][col];
+                        if (type !== -1 &&
+                            board[row][col + 1] === type &&
+                            board[row][col + 2] === type) {
+                            
+                            let length = 3;
+                            while (col + length < config.boardSize && board[row][col + length] === type) {
+                                length++;
+                            }
+                            
+                            for (let i = 0; i < length; i++) {
+                                matches.push({ row, col: col + i });
+                            }
+                            
+                            col += length - 1;
+                        }
+                    }
+                }
+                
+                // 检查垂直匹配
+                for (let col = 0; col < config.boardSize; col++) {
+                    for (let row = 0; row < config.boardSize - 2; row++) {
+                        const type = board[row][col];
+                        if (type !== -1 &&
+                            board[row + 1][col] === type &&
+                            board[row + 2][col] === type) {
+                            
+                            let length = 3;
+                            while (row + length < config.boardSize && board[row + length][col] === type) {
+                                length++;
+                            }
+                            
+                            for (let i = 0; i < length; i++) {
+                                matches.push({ row: row + i, col });
+                            }
+                            
+                            row += length - 1;
+                        }
+                    }
+                }
+                
+                return matches;
+            }
+            
+            // 处理匹配
+            function processMatches(matches) {
+                if (matches.length === 0) return;
+                
+                // 增加分数
+                score += matches.length * 10;
+                scoreElement.textContent = score;
+                
+                // 标记匹配的方块
+                for (const match of matches) {
+                    const tile = document.querySelector(`.tile[data-row="${match.row}"][data-col="${match.col}"]`);
+                    tile.classList.add('matched');
+                    
+                    // 设置方块为空（用-1表示）
+                    board[match.row][match.col] = -1;
+                }
+                
+                // 延迟执行下落和新方块生成
+                setTimeout(() => {
+                    // 方块下落
+                    for (let col = 0; col < config.boardSize; col++) {
+                        let emptySpaces = 0;
+                        
+                        for (let row = config.boardSize - 1; row >= 0; row--) {
+                            if (board[row][col] === -1) {
+                                emptySpaces++;
+                            } else if (emptySpaces > 0) {
+                                board[row + emptySpaces][col] = board[row][col];
+                                board[row][col] = -1;
+                            }
+                        }
+                        
+                        // 在顶部生成新方块
+                        for (let row = 0; row < emptySpaces; row++) {
+                            board[row][col] = Math.floor(Math.random() * config.tileTypes);
+                        }
+                    }
+                    
+                    // 重新渲染
+                    renderBoard();
+                    
+                    // 检查是否有新的匹配
+                    const newMatches = findMatches();
+                    if (newMatches.length > 0) {
+                        // 递归处理新的匹配
+                        setTimeout(() => processMatches(newMatches), 300);
+                    }
+                }, 500);
+            }
+            
+            // 重新开始游戏
+            restartBtn.addEventListener('click', initGame);
+            
+            // 应用自定义图片
+            applyImagesBtn.addEventListener('click', () => {
+                const selectedOption = document.querySelector('.image-option.selected');
+                if (selectedOption) {
+                    const type = parseInt(selectedOption.dataset.type);
+                    
+                    // 弹出提示让用户输入新图片URL
+                    const newUrl = prompt('请输入新图片的URL:', config.images[type]);
+                    
+                    if (newUrl) {
+                        config.images[type] = newUrl;
+                        selectedOption.style.backgroundImage = `url(${newUrl})`;
+                        renderBoard();
+                    }
+                }
+            });
+            
+            // 图片选择处理
+            imageOptions.forEach(option => {
+                option.addEventListener('click', () => {
+                    imageOptions.forEach(opt => opt.classList.remove('selected'));
+                    option.classList.add('selected');
+                });
+            });
+            
+            // 初始化游戏
+            initGame();
+        });
+    </script>
+</body>
+</html>
